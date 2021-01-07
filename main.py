@@ -1,6 +1,7 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from uvicorn import run
 
 from utils.db_pools import db_pools
@@ -10,8 +11,8 @@ app = FastAPI(
     version="1.0.0",
     description="株洲机务段劳资信息管理系统",
     docs_url=None,
-    redoc_url=None,
-)
+    # redoc_url=None,
+    default_response_class=ORJSONResponse)
 
 
 @app.on_event("startup")
@@ -33,8 +34,9 @@ for root, _, files in os.walk('./routers'):
             continue
         if e == '.py':
             router = __import__(os.path.join(root[2:], n).replace('/', '.').replace('\\', '.'), fromlist=(n, )).router
-            prefix = f"/api/{root[10:] if n == 'index' else os.path.join(root[10:], n)}"
+            route = os.path.join(root[10:], n).replace('\\', '/')
+            prefix = f"/api/{root[10:] if n == 'index' else route}"
             app.include_router(router=router, prefix=prefix)
 
 if __name__ == "__main__":
-    run('main:app', host='0.0.0.0', port=3333, log_level='info', reload=True)
+    run('main:app', host='127.0.0.1', port=3333, log_level='info', reload=True)

@@ -14,3 +14,6 @@ class IUser(BaseModel):
 
 class IUserInDB(IUser):
     password: str
+
+
+DICUSERINFO = dict()

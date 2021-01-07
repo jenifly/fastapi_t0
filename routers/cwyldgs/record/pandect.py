@@ -3,11 +3,11 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from model.query import DataQuerySE, QueryType, query
 from model.response import ResponseModel
 from utils.db_pools import db_pools
 from utils.df_excel_Response import DataFrameResponse
 from utils.user_verify import IUser, role_verify
+from common.parameters import SingleDotDict, params_se
 
 # from utils.record import get_params
 
@@ -23,7 +23,8 @@ def base_sql(params):
     sql += f"b.pay_date between '{params.start}' and '{params.end}' "
     order = f' order by {params.field} {params.order} ' if params.order and params.field else ' '
     sql += order if params.uid or params.single else f'group by b.detail{order}{params.limit} '
-    return sql_translate(sql, 'dic_', ['sys_department', 'gs_station', 'gs_station', 'gs_station', 'gs_jgdm'],
+    return sql_translate(sql, 'dic_',
+                         ['sys_department', 'gs_station', 'gs_station', 'gs_station', 'gs_jgdm'],
                          ['dp', 'sf', 'zd', 'dcdd', 'jgdm'])
 
 
@@ -32,19 +33,21 @@ def sql_translate(sql, prefix, tables, fields):
 
 
 @router.get("", response_model=ResponseModel)
-async def get_details(_: IUser = role_verify(1), query: DataQuerySE = query(QueryType.SE)):
+# async def get_details(_: IUser = role_verify(1), params: DataparamsSE = params(paramsType.SE)):
+async def get_details(params: SingleDotDict = Depends(params_se)):
     """
     获取值乘详情数据
     """
-    role_verify(1, 3, 4, 5)
-    data = {'items': await db_pools.mysql.fetch_all(base_sql(query))}
-    if not query.uid or query.page == 1:
-        data.update({
-            'total': (await db_pools.mysql.fetch_one(
-                f"""SELECT count(*) c FROM (SELECT count(*) c FROM dat_gs_zc_detail a join dat_gs_zc b on a.id=b.detail WHERE{f"dp='{query.dp}' and" if query.dp else ''} b.pay_date between '{query.start}' and '{query.end}' GROUP BY b.detail) c"""
-            ))['c']
-        })
-    return {'detail': data}
+    return {}
+    # data = {'items': await db_pools.mysql.fetch_all(base_sql(params))}
+    # if not params.uid or params.page == 1:
+    #     data.update({
+    #         'total': (await db_pools.mysql.fetch_one(
+    #             f"""SELECT count(*) c FROM (SELECT count(*) c FROM dat_gs_zc_detail a join dat_gs_zc b on a.id=b.detail WHERE{f"dp='{params.dp}' and" if params.dp else ''} b.pay_date between '{params.start}' and '{params.end}' GROUP BY b.detail) c"""
+    #         ))['c']
+    #     })
+
+    # return {'detail': base_sql(params)}
 
 
 # @router.get("/download")
