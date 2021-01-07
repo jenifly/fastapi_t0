@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Body, Depends, HTTPException
+
+from utils.db_pools import db_pools
 from utils.response_modle import RESPONSE_STATUS, ResponseModel
 from utils.user_modle import User, role_verify
-from utils.db_pools import db_pools
-
 
 router = APIRouter()
 

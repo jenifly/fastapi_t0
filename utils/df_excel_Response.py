@@ -1,10 +1,10 @@
-from typing import Any
 from io import BytesIO
+from typing import Any
 from urllib.parse import quote
 
 import pandas as pd
-
 from starlette.responses import Response
+
 
 class DataFrameResponse(Response):
     def __init__(

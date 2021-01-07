@@ -1,8 +1,8 @@
-from functools import partial
 from enum import Enum
+from functools import partial
 
-from pydantic import BaseModel
 from fastapi import Depends, HTTPException, Request
+from pydantic import BaseModel
 
 
 class QueryType(Enum):

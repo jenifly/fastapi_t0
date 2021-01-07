@@ -2,7 +2,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-
 RESPONSE_STATUS_MAP = {
     4000: "OK"
 }

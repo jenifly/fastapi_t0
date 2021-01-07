@@ -1,31 +1,29 @@
 import logging
-
-from functools import partial
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from functools import partial
+from typing import Optional
 
 import jwt
-
+from fastapi import Body, Depends, Header, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
-from fastapi import Body, Depends, HTTPException, Header, Request
-from passlib.context import CryptContext
 from jwt import PyJWTError
+from passlib.context import CryptContext
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_402_PAYMENT_REQUIRED
 
-from config import SECRET_KEY, ALGORITHM
-from utils.db_pools import db_pools
+from config import ALGORITHM, SECRET_KEY
 from model.user import IUser, IUserInDB
+from utils.db_pools import db_pools
 
 
 class OAuth2PasswordRequestFormJy:
     def __init__(
-        self,
-        grant_type: str = Body(None, regex="password", embed=True),
-        username: str = Body(..., embed=True),
-        password: str = Body(..., embed=True),
-        scope: str = Body("", embed=True),
-        client_id: Optional[str] = Body(None, embed=True),
-        client_secret: Optional[str] = Body(None, embed=True),
+            self,
+            grant_type: str = Body(None, regex="password", embed=True),
+            username: str = Body(..., embed=True),
+            password: str = Body(..., embed=True),
+            scope: str = Body("", embed=True),
+            client_id: Optional[str] = Body(None, embed=True),
+            client_secret: Optional[str] = Body(None, embed=True),
     ):
         self.grant_type = grant_type
         self.username = username
@@ -36,7 +34,8 @@ class OAuth2PasswordRequestFormJy:
 
 
 class OAuth2PasswordJy(OAuth2PasswordBearer):
-    async def __call__(self, Authorization: str = Header(None)) -> Optional[str]:
+    async def __call__(
+        self, Authorization: str = Header(None)) -> Optional[str]:
         if not Authorization:
             if self.auto_error:
                 raise HTTPException(
@@ -57,12 +56,15 @@ def verify_password(plain_password, hashed_password):
 
 
 async def update_password(username, password):
-    return await db_pools.mysql.execute(f"update user set `password`='{pwd_context.hash(password)}' where id={username}")
+    return await db_pools.mysql.execute(
+        f"update user set `password`='{pwd_context.hash(password)}' where id={username}"
+    )
 
 
 async def authenticate_user(username: str, password: str):
     try:
-        user = IUserInDB(**await db_pools.mysql.fetch_one(f"select * from view_user_verify where uid={username}"))
+        user = IUserInDB(**await db_pools.mysql.fetch_one(
+            f"select * from view_user_verify where uid={username}"))
         if not user:
             return False
         if not verify_password(password, user.password):
@@ -83,11 +85,10 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM).decode()
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), request: Request = None):
+async def get_current_user(
+        token: str = Depends(oauth2_scheme), request: Request = None):
     credentials_exception = HTTPException(
-        status_code=HTTP_402_PAYMENT_REQUIRED,
-        detail="凭据已过期或错误，重复尝试将锁定ip！"
-    )
+        status_code=HTTP_402_PAYMENT_REQUIRED, detail="凭据已过期或错误，重复尝试将锁定ip！")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("uid")
@@ -98,8 +99,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), request: Request
             if host_ != host:
                 credentials_exception = HTTPException(
                     status_code=HTTP_402_PAYMENT_REQUIRED,
-                    detail="您的账号已在其他设备登录，"
-                )
+                    detail="您的账号已在其他设备登录，")
                 raise credentials_exception
         if username is None:
             raise credentials_exception

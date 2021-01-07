@@ -1,16 +1,17 @@
 import logging
-
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from starlette.responses import Response
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from config import ACCESS_TOKEN_EXPIRE_MINUTES
 from model.respons import RESPONSE_STATUS, ResponseModel
-from utils.user import User, oauth2_scheme, authenticate_user, create_access_token, get_current_user, OAuth2PasswordRequestFormJy, update_password
 from utils.db_pools import db_pools
+from utils.user import (OAuth2PasswordRequestFormJy, User, authenticate_user,
+                        create_access_token, get_current_user, oauth2_scheme,
+                        update_password)
 
 router = APIRouter()
 

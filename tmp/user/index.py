@@ -1,17 +1,18 @@
 import logging
-
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from starlette.responses import Response
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-from config import ACCESS_TOKEN_EXPIRE_MINUTES
+from config import ACCESS_TOKEN_EXPIRE_DAYS
 from model.response import RESPONSE_STATUS, ResponseModel
-from utils.user_verify import IUser, oauth2_scheme, authenticate_user, create_access_token, get_current_user, OAuth2PasswordRequestFormJy, update_password
 from utils.db_pools import db_pools
-
+from utils.user_verify import (IUser, OAuth2PasswordRequestFormJy,
+                               authenticate_user, create_access_token,
+                               get_current_user, oauth2_scheme,
+                               update_password)
 
 router = APIRouter()
 
@@ -29,11 +30,11 @@ async def login_for_access_token(
     if host_ := await db_pools.redis.get(f'a-uid-{user.uid}'):
         host_ = host_.decode()
     if c or not host_ or host == host_:
-        access_token_expires = timedelta(days=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token_expires = timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
         data = user.dict()
         access_token = create_access_token(
             data=data, expires_delta=access_token_expires)
-        expires = ACCESS_TOKEN_EXPIRE_MINUTES * 86400
+        expires = access_token_expires.total_seconds()
         await db_pools.mysql.execute(f"INSERT INTO inf_login (uid,host) VALUES ({user.uid},'{host}')")
         await db_pools.redis.setex(f'a-uid-{user.uid}', expires, host)
         data.update({'token': access_token})

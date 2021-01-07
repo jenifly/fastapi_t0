@@ -1,15 +1,16 @@
 import os
 
-from uvicorn import run
 from fastapi import FastAPI
+from uvicorn import run
 
 from utils.db_pools import db_pools
-
 
 app = FastAPI(
     title="ZJD_LZXT",
     version="1.0.0",
-    description="株洲机务段劳资信息管理系统"
+    description="株洲机务段劳资信息管理系统",
+    docs_url=None,
+    redoc_url=None,
 )
 
 
@@ -31,10 +32,9 @@ for root, _, files in os.walk('./routers'):
         if n == '__init__':
             continue
         if e == '.py':
-            app.include_router(__import__(os.path.join(root[2:], n).replace('/', '.'), fromlist=(
-                n,)).router, prefix=f"/api/{root[10:] if n == 'index' else os.path.join(root[10:], n)}")
-
+            router = __import__(os.path.join(root[2:], n).replace('/', '.').replace('\\', '.'), fromlist=(n, )).router
+            prefix = f"/api/{root[10:] if n == 'index' else os.path.join(root[10:], n)}"
+            app.include_router(router=router, prefix=prefix)
 
 if __name__ == "__main__":
-    run('main:app', host='10.183.196.93',
-        port=3333, log_level='info', reload=True)
+    run('main:app', host='0.0.0.0', port=3333, log_level='info', reload=True)

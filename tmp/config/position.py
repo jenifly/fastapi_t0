@@ -1,16 +1,15 @@
 import logging
-
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Body, HTTPException, Query
-from starlette.responses import Response
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from config import ACCESS_TOKEN_EXPIRE_MINUTES
+from utils.db_pools import db_pools
 from utils.response_modle import RESPONSE_STATUS, ResponseModel
 from utils.user_modle import User, role_verify
-from utils.db_pools import db_pools
 
 router = APIRouter()
 
