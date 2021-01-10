@@ -10,9 +10,9 @@ from jwt import PyJWTError
 from passlib.context import CryptContext
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_402_PAYMENT_REQUIRED
 
-from config import ALGORITHM, SECRET_KEY
+from core.config import ALGORITHM, SECRET_KEY
 from model.user import IUser, IUserInDB
-from utils.db_pools import db_pools
+from dependencies.db import get_db, DB
 
 
 class OAuth2PasswordRequestFormJy:
@@ -34,8 +34,7 @@ class OAuth2PasswordRequestFormJy:
 
 
 class OAuth2PasswordJy(OAuth2PasswordBearer):
-    async def __call__(
-        self, Authorization: str = Header(None)) -> Optional[str]:
+    async def __call__(self, Authorization: str = Header(None)) -> Optional[str]:
         if not Authorization:
             if self.auto_error:
                 raise HTTPException(
@@ -57,8 +56,7 @@ def verify_password(plain_password, hashed_password):
 
 async def update_password(username, password):
     return await db_pools.mysql.execute(
-        f"update user set `password`='{pwd_context.hash(password)}' where id={username}"
-    )
+        f"update user set `password`='{pwd_context.hash(password)}' where id={username}")
 
 
 async def authenticate_user(username: str, password: str):
@@ -85,10 +83,9 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM).decode()
 
 
-async def get_current_user(
-        token: str = Depends(oauth2_scheme), request: Request = None):
-    credentials_exception = HTTPException(
-        status_code=HTTP_402_PAYMENT_REQUIRED, detail="凭据已过期或错误，重复尝试将锁定ip！")
+async def get_current_user(token: str = Depends(oauth2_scheme), request: Request = None):
+    credentials_exception = HTTPException(status_code=HTTP_402_PAYMENT_REQUIRED,
+                                          detail="凭据已过期或错误，重复尝试将锁定ip！")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("uid")
@@ -97,9 +94,8 @@ async def get_current_user(
             if host_ := await db_pools.redis.get(f'a-uid-{username}'):
                 host_ = host_.decode()
             if host_ != host:
-                credentials_exception = HTTPException(
-                    status_code=HTTP_402_PAYMENT_REQUIRED,
-                    detail="您的账号已在其他设备登录，")
+                credentials_exception = HTTPException(status_code=HTTP_402_PAYMENT_REQUIRED,
+                                                      detail="您的账号已在其他设备登录，")
                 raise credentials_exception
         if username is None:
             raise credentials_exception
@@ -111,12 +107,18 @@ async def get_current_user(
     return token_data
 
 
-def role_verify(*role: tuple):
-    return Depends(partial(__role_verify, role))
+def role_verify(*role: tuple) -> Depends:
+    def verify(user: IUser = Depends(get_current_user)) -> IUser:
+        for r in role:
+            if not user.role >> r & 1:
+                raise HTTPException(401, "权限非法！")
+        return user
+
+    return Depends(verify)
 
 
-def __role_verify(role: tuple, user: IUser = Depends(get_current_user)):
-    for r in role:
-        if not user.role >> r & 1:
-            raise HTTPException(401, "权限非法！")
-    return user
+# def __role_verify(role: tuple, user: IUser = Depends(get_current_user)):
+#     for r in role:
+#         if not user.role >> r & 1:
+#             raise HTTPException(401, "权限非法！")
+#     return user
