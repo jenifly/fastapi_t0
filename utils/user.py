@@ -11,8 +11,8 @@ from passlib.context import CryptContext
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_402_PAYMENT_REQUIRED
 
 from core.config import ALGORITHM, SECRET_KEY
+from dependencies.db import DB, get_db
 from model.user import IUser, IUserInDB
-from dependencies.db import get_db, DB
 
 
 class OAuth2PasswordRequestFormJy:

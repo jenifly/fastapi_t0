@@ -1,5 +1,5 @@
-from fastapi import Request
 from aioredis import Redis
+from fastapi import Request
 
 from core.db import DB, Database
 

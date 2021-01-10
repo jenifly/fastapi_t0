@@ -1,4 +1,5 @@
 ﻿from sys import maxsize
+
 from fastapi.responses import ORJSONResponse
 
 # ======================= project configuration =======================
